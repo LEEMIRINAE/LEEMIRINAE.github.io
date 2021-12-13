@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+    <style>
+        table,th,td {
+          border : 1px solid black;
+          border-collapse: collapse;
+        }
+        th,td {
+          padding: 5px;
+        }
+        </style>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>간단한 지도 표시하기</title>
+
+
+    <!-- jquery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> 
+    
+    <!-- naver map -->
+    <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=08bksss6fl"></script>
+
+    <script>
+
+        function loadDoc() {
+        
+        var url = 'http://apis.data.go.kr/1741000/DisasterMsg3/getDisasterMsg1List'; /*URL*/
+        var queryParams = '?' + encodeURIComponent('serviceKey') + '='+'lbpH%2BY2gpZ0eZg3DeCGhk6AoNq99KDSuQBWEr5QwpxfsIVcrk3w4R53AP6t1nPhwogngpPDx5AbCbPxexpLf8A%3D%3D'; /*Service Key*/
+        queryParams += '&' + encodeURIComponent('pageNo') + '=' + encodeURIComponent('1'); /**/
+        queryParams += '&' + encodeURIComponent('numOfRows') + '=' + encodeURIComponent('10'); /**/
+        queryParams += '&' + encodeURIComponent('type') + '=' + encodeURIComponent('xml'); /**/
+        
+        var xhttp = new XMLHttpRequest();
+        
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                myFunction(this);
+            }
+        };
+        xhttp.open("GET", url + queryParams, true);
+        xhttp.send();
+        
+        }
+        
+        function myFunction(xml) {
+          var i;
+          var xmlDoc = xml.responseXML;
+          var table="<tr><th>지역</th><th>문자내용</th></tr>";
+          var x = xmlDoc.getElementsByTagName("row");
+        
+          for (i = 0; i <x.length; i++) { 
+            table += "<tr><td>" +
+            x[i].getElementsByTagName("location_name")[0].childNodes[0].nodeValue +
+            "</td><td>" +
+            x[i].getElementsByTagName("msg")[0].childNodes[0].nodeValue +
+            "</td></tr>";
+          }
+          document.getElementById("tb").innerHTML = table;
+        }
+</script> 
+
+<script>
+    var map = new naver.maps.Map('map', {
+        center: new naver.maps.LatLng(37.3595704, 127.105399), //지도의 초기 중심 좌표
+        zoom: 13, //지도의 초기 줌 레벨
+        minZoom: 7, //지도의 최소 줌 레벨
+        zoomControl: true, //줌 컨트롤의 표시 여부
+        zoomControlOptions: { //줌 컨트롤의 옵션
+            position: naver.maps.Position.TOP_RIGHT
+        }
+    });
+
+//setOptions 메서드를 이용해 옵션을 조정할 수도 있습니다.
+map.setOptions("mapTypeControl", true); //지도 유형 컨트롤의 표시 여부
+
+naver.maps.Event.addListener(map, 'zoom_changed', function (zoom) {
+    console.log('zoom:' + zoom);
+});
+
+// 지도 인터랙션 옵션
+$("#interaction").on("click", function(e) {
+    e.preventDefault();
+
+    if (map.getOptions("draggable")) {
+        map.setOptions({ //지도 인터랙션 끄기
+            draggable: false,
+            pinchZoom: false,
+            scrollWheel: false,
+            keyboardShortcuts: false,
+            disableDoubleTapZoom: true,
+            disableDoubleClickZoom: true,
+            disableTwoFingerTapZoom: true
+        });
+
+        $(this).removeClass("control-on");
+    } else {
+        map.setOptions({ //지도 인터랙션 켜기
+            draggable: true,
+            pinchZoom: true,
+            scrollWheel: true,
+            keyboardShortcuts: true,
+            disableDoubleTapZoom: false,
+            disableDoubleClickZoom: false,
+            disableTwoFingerTapZoom: false
+        });
+
+        $(this).addClass("control-on");
+    }
+});
+
+// 관성 드래깅 옵션
+$("#kinetic").on("click", function(e) {
+    e.preventDefault();
+
+    if (map.getOptions("disableKineticPan")) {
+        map.setOptions("disableKineticPan", false); //관성 드래깅 켜기
+        $(this).addClass("control-on");
+    } else {
+        map.setOptions("disableKineticPan", true); //관성 드래깅 끄기
+        $(this).removeClass("control-on");
+    }
+});
+
+// 타일 fadeIn 효과
+$("#tile-transition").on("click", function(e) {
+    e.preventDefault();
+
+    if (map.getOptions("tileTransition")) {
+        map.setOptions("tileTransition", false); //타일 fadeIn 효과 끄기
+
+        $(this).removeClass("control-on");
+    } else {
+        map.setOptions("tileTransition", true); //타일 fadeIn 효과 켜기
+        $(this).addClass("control-on");
+    }
+});
+
+// min/max 줌 레벨
+$("#min-max-zoom").on("click", function(e) {
+    e.preventDefault();
+
+    if (map.getOptions("minZoom") === 10) {
+        map.setOptions({
+            minZoom: 7,
+            maxZoom: 21
+        });
+        $(this).val(this.name + ': 7 ~ 21');
+    } else {
+        map.setOptions({
+            minZoom: 10,
+            maxZoom: 21
+        });
+        $(this).val(this.name + ': 10 ~ 21');
+    }
+});
+
+//지도 컨트롤
+$("#controls").on("click", function(e) {
+    e.preventDefault();
+
+    if (map.getOptions("scaleControl")) {
+        map.setOptions({ //모든 지도 컨트롤 숨기기
+            scaleControl: false,
+            logoControl: false,
+            mapDataControl: false,
+            zoomControl: false,
+            mapTypeControl: false
+        });
+        $(this).removeClass('control-on');
+    } else {
+        map.setOptions({ //모든 지도 컨트롤 보이기
+            scaleControl: true,
+            logoControl: true,
+            mapDataControl: true,
+            zoomControl: true,
+            mapTypeControl: true
+        });
+        $(this).addClass('control-on');
+    }
+});
+
+$("#interaction, #tile-transition, #controls").addClass("control-on");
+</script>
+
+<script>
+var HOME_PATH = window.HOME_PATH || '.';
+var map = new naver.maps.Map('map', {
+    center: new naver.maps.LatLng(37.3595704, 127.105399),
+    zoom: 15
+});
+
+makeMarker(map, new naver.maps.LatLng(37.3595704, 127.105399), 0);
+makeMarker(map, new naver.maps.LatLng(37.4018025, 127.1153248), 1);
+makeMarker(map, new naver.maps.LatLng(37.2334567, 128.0983706), 2);
+makeMarker(map, new naver.maps.LatLng(37.9765432, 128.0989846), 3);
+makeMarker(map, new naver.maps.LatLng(37.5446778, 129.0959706), 4);
+makeMarker(map, new naver.maps.LatLng(37.9067436, 129.0989823), 5);
+makeMarker(map, new naver.maps.LatLng(37.7654394, 129.0824332), 6);
+makeMarker(map, new naver.maps.LatLng(37.7894376, 129.0554346), 7);
+makeMarker(map, new naver.maps.LatLng(37.2345877, 128.0565842), 8);
+makeMarker(map, new naver.maps.LatLng(37.8094376, 127.0098765), 9);
+makeMarker(map, new naver.maps.LatLng(37.6723980, 127.0438734), 10);
+makeMarker(map, new naver.maps.LatLng(37.3234769, 128.0090998), 11);
+makeMarker(map, new naver.maps.LatLng(37.3234598, 128.0547674), 12);
+makeMarker(map, new naver.maps.LatLng(37.7562367, 130.0785636), 13);
+makeMarker(map, new naver.maps.LatLng(37.7843678, 131.0867356), 14);
+makeMarker(map, new naver.maps.LatLng(37.2434650, 130.0095435), 15);
+
+function makeMarker(map, position, index) {
+
+    var ICON_GAP = 31;
+    var ICON_SPRITE_IMAGE_URL = HOME_PATH +'/img/example/sp_pin_hd.png';
+    var iconSpritePositionX = (index * ICON_GAP) + 1;
+    var iconSpritePositionY = 1;
+
+    var marker = new naver.maps.Marker({
+        map: map,
+        position: position,
+        icon: {
+          url: ICON_SPRITE_IMAGE_URL,
+          size: new naver.maps.Size(26, 36), // 이미지 크기
+          origin: new naver.maps.Point(iconSpritePositionX, iconSpritePositionY), // 스프라이트 이미지에서 클리핑 위치
+          anchor: new naver.maps.Point(13, 36), // 지도상 위치에서 이미지 위치의 offset
+          scaledSize: new naver.maps.Size(395, 79)
+        }
+    });
+
+    return marker;
+}
+</script>
+</head>
+<body>
+<div id="map" style="width:100%;height:400px;"></div>
+<div id="table"></div>
+<script>
+
+var HOME_PATH = "https://navermaps.github.io/maps.js/docs",
+    urlPrefix = HOME_PATH +'/data/region',
+    urlSuffix = '.json',
+    regionGeoJson = [],
+    loadCount = 0;
+
+var map = new naver.maps.Map(document.getElementById('map'), {
+    zoom: 7,
+    mapTypeId: 'normal',
+    center: new naver.maps.LatLng(36.4203004, 128.317960)
+});
+
+// 지도가 로드된 다음에 일회성으로 실행되는 이벤트
+naver.maps.Event.once(map, 'init_stylemap', function () {
+    for (var i = 1; i < 18; i++) {
+        var keyword = i +'';
+
+        if (keyword.length === 1) {
+            keyword = '0'+ keyword;
+        }
+        // 01, 02, 03 생성
+
+        $.ajax({
+            url: urlPrefix + keyword + urlSuffix,
+            success: function(idx) {
+                return function(geojson) {
+                    regionGeoJson[idx] = geojson;
+
+                    loadCount++;
+                    // 17개 다 받아오면 그리기 시작
+                    if (loadCount === 17) {
+                        startDataLayer();
+                    }
+                }
+            }(i - 1)
+        });
+    }
+});
+
+var tooltip = $('<div style="position:absolute;z-index:1000;padding:5px 10px;background-color:#fff;border:solid 2px #000;font-size:14px;pointer-events:none;display:none;"></div>');
+tooltip.appendTo(map.getPanes().floatPane);
+
+
+function startDataLayer() {
+
+    map.data.setStyle(function(feature) {
+        
+        // 기본 라인 
+        var styleOptions = {
+            fillColor: '#ff0000',
+            fillOpacity: 0.0001,
+            strokeColor: '#ff0000',
+            strokeWeight: 2,
+            strokeOpacity: 0.4
+        };
+
+        // 마우스 올라갔을 떄 스타일
+        if (feature.getProperty('focus')) {
+            styleOptions.fillOpacity = 0.6;
+            styleOptions.fillColor = '#0f0';
+            styleOptions.strokeColor = '#0f0';
+            styleOptions.strokeWeight = 4;
+            styleOptions.strokeOpacity = 1;
+        }
+
+        return styleOptions;
+    });
+
+    // 제가 받아온 Geojson파일을 map.data
+    regionGeoJson.forEach(function(geojson) {
+        map.data.addGeoJson(geojson);
+    });
+
+    map.data.addListener('click', function(e) {
+        var feature = e.feature;
+
+        // 여기서 다른 선택된 지역 있는지 지워줘야 됩니당
+        // 지워주는 방법은
+        // map.data._features 를 foreach 하면서 focus 끄시면 됩니다.
+        if (feature.getProperty('focus') !== true) {
+
+            document.getElementById("table").innerHTML = feature.table;
+        } else {
+            clear_table();
+            feature.setProperty('focus', false);
+        }
+    });
+
+
+    map.data.addListener('mouseover', function(e) {
+        
+        // 이름을 받아
+        var feature = e.feature,
+            regionName = feature.getProperty('area1');
+            // 강원도
+
+        // 지역명 뜨는거 
+        tooltip.css({
+            display: '',
+            left: e.offset.x,
+            top: e.offset.y
+        }).text(regionName);
+
+        map.data.overrideStyle(feature, {
+            fillOpacity: 0.6,
+            strokeWeight: 4,
+            strokeOpacity: 1
+        });
+    });
+
+    map.data.addListener('mouseout', function(e) {
+        // 툴팁 사라지게 하고
+        tooltip.hide().empty();
+
+        // 스타일 원상복귀시키는
+        map.data.revertStyle();
+    });
+}
+
+</script>
+
+
+<table id="tb"></table>
+
+</body>
+</html>
